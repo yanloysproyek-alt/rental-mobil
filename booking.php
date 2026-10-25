@@ -53,10 +53,10 @@ if (isset($_POST['kirim_booking'])) {
 
 $daftar_mobil = mysqli_query($koneksi, "SELECT * FROM mobil WHERE status_mobil = 'Tersedia'");
 
-// LOGIKA TAMBAHAN: Mencari apakah pelanggan ini punya transaksi aktif yang terakhir dikirim
-$cek_booking_terakhir = mysqli_query($koneksi, "SELECT id_booking FROM booking WHERE id_pelanggan = '$id_pelanggan' ORDER BY id_booking DESC LIMIT 1");
-$data_booking_terakhir = mysqli_fetch_assoc($cek_booking_terakhir);
-$id_booking_aktif = $data_booking_terakhir['id_booking'] ?? null;
+// LOGIKA BARU: Mengambil data transaksi terakhir yang dilakukan pelanggan ini untuk tombol cek status
+$cek_transaksi = mysqli_query($koneksi, "SELECT id_booking FROM booking WHERE id_pelanggan = '$id_pelanggan' ORDER BY id_booking DESC LIMIT 1");
+$data_transaksi = mysqli_fetch_assoc($cek_transaksi);
+$id_booking_terakhir = $data_transaksi['id_booking'] ?? null;
 ?>
 <!DOCTYPE html>
 <html>
@@ -80,15 +80,20 @@ $id_booking_aktif = $data_booking_terakhir['id_booking'] ?? null;
         button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; font-weight: bold; cursor: pointer; border-radius: 4px; font-size: 15px; margin-top: 10px; box-shadow: 0 3px 6px rgba(0,123,255,0.15); transition: 0.2s; }
         button:hover { background: #0056b3; }
         
-        /* TOMBOL MENU NAVIGASI ATAS */
-        .logout-btn { background: #dc3545; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: bold; float: right; margin-left: 10px; }
-        .status-btn { background: #ffc107; color: #212529; padding: 6px 12px; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: bold; float: right; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        /* CSS BARU UNTUK TOMBOL NAVIGASI DI ATAS */
+        .logout-btn { background: #dc3545; color: white; padding: 6px 12px; text-decoration: none; float: right; border-radius: 4px; font-size: 12px; font-weight: bold; margin-left: 10px; }
+        .status-btn { background: #ffc107; color: #212529; padding: 6px 12px; text-decoration: none; float: right; border-radius: 4px; font-size: 12px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.08); transition: 0.2s; }
         .status-btn:hover { background: #e0a800; }
         
-        .grid-mobil { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; margin-top: 12px; }
+        .grid-mobil { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-top: 12px; }
         .card-mobil { background: white; border-radius: 6px; overflow: hidden; border: 1px solid #dee2e6; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
         .card-mobil img { width: 100%; height: 110px; object-fit: cover; background: #eaedf1; }
-        .card-info { padding: 8px; font-size: 12px; font-weight: bold; color: #333; background: #fff; border-top: 1px solid #eee; }
+        
+        .card-body-katalog { padding: 10px; background: #fff; border-top: 1px solid #eee; text-align: left; }
+        .card-info-nama { font-size: 13px; font-weight: bold; color: #333; margin-bottom: 3px; }
+        .card-info-plat { font-size: 11px; color: #666; background: #e9ecef; padding: 2px 5px; border-radius: 3px; display: inline-block; margin-bottom: 5px; font-weight: bold; }
+        .card-info-harga { font-size: 12px; font-weight: bold; color: #28a745; }
+        
         .alert { padding: 10px; border-radius: 4px; margin-bottom: 15px; font-weight: bold; background: #f8d7da; color: #721c24; font-size: 13px; }
     </style>
 </head>
@@ -96,9 +101,9 @@ $id_booking_aktif = $data_booking_terakhir['id_booking'] ?? null;
 <div class="container">
     <a href="logout.php" class="logout-btn">Logout</a>
     
-    <!-- TOMBOL BARU: Muncul otomatis jika pelanggan sudah pernah mengirim form booking sebelumnya -->
-    <?php if ($id_booking_aktif): ?>
-        <a href="status.php?id=<?php echo $id_booking_aktif; ?>" class="status-btn">⏳ Cek Status Konfirmasi Admin</a>
+    <!-- TOMBOL BARU: Akan muncul otomatis jika pelanggan sudah pernah mengirim booking sebelumnya -->
+    <?php if ($id_booking_terakhir): ?>
+        <a href="status.php?id=<?php echo $id_booking_terakhir; ?>" class="status-btn">⏳ Cek Status Booking</a>
     <?php endif; ?>
     
     <h2>Formulir Sewa Mobil</h2>
@@ -118,7 +123,7 @@ $id_booking_aktif = $data_booking_terakhir['id_booking'] ?? null;
                     </select>
                 </div>
 
-                <label style="margin-top: 20px;">Katalog Foto Mobil Tersedia:</label>
+                <label style="margin-top: 20px; display: block; font-weight: bold;">Katalog Foto Mobil Tersedia:</label>
                 <div class="grid-mobil">
                     <?php 
                     if (mysqli_num_rows($daftar_mobil) > 0) {
@@ -127,17 +132,22 @@ $id_booking_aktif = $data_booking_terakhir['id_booking'] ?? null;
                     ?>
                         <div class="card-mobil">
                             <img src="assets/<?php echo $img['foto_mobil']; ?>" alt="Mobil">
-                            <div class="card-info">
-                                <?php echo htmlspecialchars($img['merk_mobil']); ?>
+                            
+                            <div class="card-body-katalog">
+                                <div class="card-info-nama"><?php echo htmlspecialchars($img['merk_mobil']); ?></div>
+                                <div class="card-info-plat"><?php echo htmlspecialchars($img['plat_nomor']); ?></div>
+                                <div class="card-info-harga">Rp <?php echo number_format($img['harga_sewa'], 0, ',', '.'); ?> / hari</div>
                             </div>
+                            
                         </div>
                     <?php 
                         endwhile; 
                     } 
+
                     ?>
                 </div>
             </div>
-            
+
             <div class="kolom-form">
                 <div class="form-group"><label>NIK KTP</label><input type="text" name="nik" placeholder="16 digit NIK" required></div>
                 <div class="form-group"><label>No HP Pesanan</label><input type="text" name="no_telp" placeholder="Contoh: 08123xxx" required></div>
@@ -146,11 +156,20 @@ $id_booking_aktif = $data_booking_terakhir['id_booking'] ?? null;
                 <div class="form-group"><label>Tanggal Kembali</label><input type="date" name="tgl_kembali" required></div>
                 <div class="form-group"><label>Jam Pengambilan</label><input type="time" name="jam_ambil" required></div>
                 <div class="form-group"><label>Foto KTP</label><input type="file" name="foto_ktp" accept="image/*" required></div>
-                <div class="form-group"><label>Bukti Transfer</label><input type="file" name="bukti_transfer" accept="image/*" required></div>
                 
-                <button type="submit" name="kirim_booking">KIRIM BOOKING</button>
+                <div class="form-group">
+                    <label>Informasi Rekening Pembayaran</label>
+                    <div style="background: #e2f0d9; border: 1px solid #a9d18e; color: #385723; padding: 10px; border-radius: 4px; font-size: 13px; margin-bottom: 8px; font-weight: bold; line-height: 1.4;">
+                        No. Rekening: BRI 357301038828537<br>
+                        Nama : Yosef Ratzinger Yanloys Lado
+                    </div>
+                    <label>Bukti Transfer</label>
+                    <input type="file" name="bukti_transfer" accept="image/*" required>
+                </div>
+                
+                <button type="submit" name="kirim_booking">Kirim Booking</button>
             </div>
-
+            
         </div>
     </form>
 </div>
