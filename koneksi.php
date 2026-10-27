@@ -2,7 +2,7 @@
 $host = "localhost";
 $user = "root";
 $pass = "";
-$db   = "db_rental_mobil"; // Mengikuti nama database di phpMyAdmin Anda
+$db   = "db_rental_mobil"; 
 
 $koneksi = mysqli_connect($host, $user, $pass, $db);
 

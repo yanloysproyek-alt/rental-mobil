@@ -43,7 +43,6 @@ if (isset($_POST['login'])) {
         exit();
     }
 
-    // 3. JIKA DUA-DUANYA TIDAK COCOK
     $error = "<div style='color:red; text-align:center; margin-bottom:10px;'>Username/Email atau Password salah!</div>";
 }
 ?>

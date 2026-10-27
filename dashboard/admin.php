@@ -7,9 +7,7 @@ if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'admin') {
     exit();
 }
 
-// ========================================================
-// LOGIKA PERBAIKAN: HAPUS TRANSAKSI & KEMBALIKAN MOBIL JADI TERSEDIA
-// ========================================================
+
 if (isset($_GET['hapus_booking'])) {
     $id_hapus = mysqli_real_escape_string($koneksi, $_GET['hapus_booking']);
     
